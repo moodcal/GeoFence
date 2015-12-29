@@ -16,21 +16,24 @@
 @interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, MKMapViewDelegate, CLLocationManagerDelegate, UITextFieldDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (weak, nonatomic) IBOutlet MKMapView *mapView;
+@property (weak, nonatomic) IBOutlet UIButton *addButton;
+@property (weak, nonatomic) IBOutlet UIBarButtonItem *recordsItem;
+@property (strong, nonatomic) UIImageView *pinImageView;
+- (IBAction)addAction:(id)sender;
+
 @property (strong, nonatomic) NSMutableArray *positions;
 @property (strong, nonatomic) NSMutableArray *records;
 @property (strong, nonatomic) CLLocationManager *locationManager;
-@property (strong, nonatomic) CLLocation *currentLocation;
-@property (weak, nonatomic) IBOutlet UIButton *addButton;
-@property (strong, nonatomic) UIImageView *pinImageView;
 @property (strong, nonatomic) CLGeocoder *geocoder;
-- (IBAction)addAction:(id)sender;
 @end
 
 @implementation MainViewController
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    self.title = @"位置监控";
+    self.title = NSLocalizedString(@"GeoFence", nil);
+    [self.addButton setTitle:NSLocalizedString(@"Add", nil) forState:UIControlStateNormal];
+    self.recordsItem.title = NSLocalizedString(@"Records", nil);
     self.geocoder = [[CLGeocoder alloc] init];
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
@@ -81,11 +84,7 @@
         }
     }];
 
-    if (!exist)
-        cell.nameTextField.textColor = [UIColor redColor];
-    else
-        cell.nameTextField.textColor = [UIColor blackColor];
-    
+    cell.nameTextField.textColor = exist ? [UIColor blackColor] : [UIColor redColor];
     cell.nameTextField.text = positionInfo.identifier;
     cell.nameTextField.tag = indexPath.row;
     cell.addressLabel.text = positionInfo.address ? positionInfo.address : [NSString stringWithFormat:@"%.3f, %.3f", positionInfo.lat, positionInfo.lng];
@@ -114,7 +113,7 @@
     if ([segue.identifier isEqualToString:@"PushRecordSegue"]) {
         RecordController *recordController = (RecordController *)segue.destinationViewController;
         recordController.records = self.records.reverseObjectEnumerator.allObjects;
-        recordController.title = @"记录列表";
+        recordController.title = NSLocalizedString(@"Records", nil);
     }
 }
 
@@ -253,7 +252,7 @@
     [dateFormatter setDateFormat:@"yy-MM-dd HH:mm"];
 
     UILocalNotification *notification = [[UILocalNotification alloc] init];
-    NSString *recordTypeStr = record.recordType == TraceRecordTypeEnter ? @"到达" : @"离开";
+    NSString *recordTypeStr = record.recordType == TraceRecordTypeEnter ? NSLocalizedString(@"Enter", nil) : NSLocalizedString(@"Exit", nil);
     NSString *message = [NSString stringWithFormat:@"%@ %@ [%@]", recordTypeStr, record.positionName, [dateFormatter stringFromDate:record.recordAt]];
     [notification setAlertBody:message];
     [notification setFireDate:[NSDate dateWithTimeIntervalSinceNow:10]];

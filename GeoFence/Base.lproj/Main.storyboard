@@ -45,7 +45,11 @@
                                 </connections>
                             </mapView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="alP-fd-Y6q">
-                                <rect key="frame" x="282" y="466" width="30" height="30"/>
+                                <rect key="frame" x="262" y="454" width="50" height="40"/>
+                                <constraints>
+                                    <constraint firstAttribute="height" constant="40" id="MUp-u0-G0m"/>
+                                    <constraint firstAttribute="width" constant="50" id="yUc-ZP-lPu"/>
+                                </constraints>
                                 <state key="normal" title="Add"/>
                                 <connections>
                                     <action selector="addAction:" destination="78T-aK-4hJ" eventType="touchUpInside" id="cZD-0Q-0xW"/>
@@ -105,7 +109,7 @@
                             <constraint firstItem="LJr-QW-gRQ" firstAttribute="leading" secondItem="4Ma-qI-8KE" secondAttribute="leading" id="1Bj-CQ-YVD"/>
                             <constraint firstItem="gv3-AR-YWv" firstAttribute="leading" secondItem="4Ma-qI-8KE" secondAttribute="leading" id="2XY-lG-T7C"/>
                             <constraint firstItem="gv3-AR-YWv" firstAttribute="bottom" secondItem="pYO-3w-d20" secondAttribute="top" id="KFI-9O-lYc"/>
-                            <constraint firstItem="pYO-3w-d20" firstAttribute="top" secondItem="alP-fd-Y6q" secondAttribute="bottom" constant="8" id="UBA-V6-eEn"/>
+                            <constraint firstItem="pYO-3w-d20" firstAttribute="top" secondItem="alP-fd-Y6q" secondAttribute="bottom" constant="10" id="UBA-V6-eEn"/>
                             <constraint firstAttribute="trailing" secondItem="gv3-AR-YWv" secondAttribute="trailing" id="Zx8-yX-sDq"/>
                             <constraint firstItem="LJr-QW-gRQ" firstAttribute="top" secondItem="4Ma-qI-8KE" secondAttribute="top" id="agZ-pC-VAG"/>
                             <constraint firstAttribute="trailing" secondItem="LJr-QW-gRQ" secondAttribute="trailing" id="cV1-qV-Fv8"/>
@@ -114,15 +118,16 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="Fei-Pn-XmX">
-                        <barButtonItem key="rightBarButtonItem" title="records" id="1Mm-ZW-UNX">
+                        <barButtonItem key="rightBarButtonItem" title="records" style="plain" id="1Mm-ZW-UNX">
                             <connections>
                                 <segue destination="aZN-x7-ZR3" kind="push" identifier="PushRecordSegue" id="tC6-qc-jSY"/>
                             </connections>
                         </barButtonItem>
                     </navigationItem>
                     <connections>
-                        <outlet property="addButton" destination="alP-fd-Y6q" id="GSq-Fb-6BG"/>
+                        <outlet property="addButton" destination="alP-fd-Y6q" id="k8n-EK-6DX"/>
                         <outlet property="mapView" destination="gv3-AR-YWv" id="0nW-UR-RU9"/>
+                        <outlet property="recordsItem" destination="1Mm-ZW-UNX" id="wHb-5H-J4V"/>
                         <outlet property="tableView" destination="LJr-QW-gRQ" id="Ea8-bD-qHk"/>
                     </connections>
                 </viewController>

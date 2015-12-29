@@ -1,0 +1,13 @@
+/* 
+  Localizable.strings
+  GeoFence
+
+  Created by yanzheng on 15/12/29.
+  Copyright © 2015年 links. All rights reserved.
+*/
+
+"Enter" = "进入";
+"Exit" = "离开";
+"Records" = "记录";
+"GeoFence" = "位置监控";
+"Add" = "添加";
