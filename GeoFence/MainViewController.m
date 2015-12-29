@@ -23,7 +23,6 @@
 @property (weak, nonatomic) IBOutlet UIButton *addButton;
 @property (strong, nonatomic) UIImageView *pinImageView;
 @property (strong, nonatomic) CLGeocoder *geocoder;
-
 - (IBAction)addAction:(id)sender;
 @end
 
@@ -71,6 +70,22 @@
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     PositionCell *cell = [tableView dequeueReusableCellWithIdentifier:@"PositionCell" forIndexPath:indexPath];
     PositionInfo *positionInfo = [self.positions objectAtIndex:indexPath.row];
+    __block BOOL exist = NO;
+    [self.locationManager.monitoredRegions enumerateObjectsUsingBlock:^(__kindof CLRegion * _Nonnull obj, BOOL * _Nonnull stop) {
+        CLCircularRegion *region = (CLCircularRegion *)obj;
+        if ([region.identifier isEqualToString:positionInfo.identifier]
+            && fabs(region.center.latitude - positionInfo.lat) < 0.001
+            && fabs(region.center.longitude - positionInfo.lng) < 0.001) {
+            exist = YES;
+            *stop = YES;
+        }
+    }];
+
+    if (!exist)
+        cell.nameTextField.textColor = [UIColor redColor];
+    else
+        cell.nameTextField.textColor = [UIColor blackColor];
+    
     cell.nameTextField.text = positionInfo.identifier;
     cell.nameTextField.tag = indexPath.row;
     cell.addressLabel.text = positionInfo.address ? positionInfo.address : [NSString stringWithFormat:@"%.3f, %.3f", positionInfo.lat, positionInfo.lng];
@@ -174,7 +189,7 @@
     positionInfo.lat = gpsCoordinate.latitude;
     positionInfo.lng = gpsCoordinate.longitude;
 
-    CLCircularRegion *region = [[CLCircularRegion alloc] initWithCenter:self.mapView.centerCoordinate radius:300 identifier:positionInfo.identifier];
+    CLCircularRegion *region = [[CLCircularRegion alloc] initWithCenter:gpsCoordinate radius:300 identifier:positionInfo.identifier];
     [self.locationManager startMonitoringForRegion:region];
     [self.positions addObject:positionInfo];
     [self syncPositions];
