@@ -1,0 +1,16 @@
+//
+//  GeoFence.pch
+//  GeoFence
+//
+//  Created by yanzheng on 15/12/28.
+//  Copyright © 2015年 links. All rights reserved.
+//
+
+#ifndef GeoFence_pch
+#define GeoFence_pch
+
+#import <MapKit/MapKit.h>
+#import <CoreLocation/CoreLocation.h>
+#import "YYModel/YYModel.h"
+
+#endif /* GeoFence_pch */
