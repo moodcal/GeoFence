@@ -11,6 +11,7 @@
 #import "TraceRecord.h"
 #import "PositionCell.h"
 #import "RecordController.h"
+#import "LocationTransform.h"
 
 @interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, MKMapViewDelegate, CLLocationManagerDelegate, UITextFieldDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
@@ -36,9 +37,10 @@
     self.locationManager.delegate = self;
     [self.locationManager requestWhenInUseAuthorization];
     [self.locationManager startUpdatingLocation];
-    self.pinImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 10, 20)];
-    self.pinImageView.backgroundColor = [UIColor redColor];
+    self.pinImageView = [[UIImageView alloc] initWithFrame:CGRectMake(-100, -100, 16, 24)];
+    self.pinImageView.image = [UIImage imageNamed:@"pin"];
     [self.mapView addSubview:self.pinImageView];
+    self.mapView.showsUserLocation = YES;
     
     NSString *positionJsonStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"StoredPositions"];
     NSString *recordJsonStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"StoredRecords"];
@@ -51,7 +53,8 @@
 }
 
 - (void)viewDidAppear:(BOOL)animated {
-    self.pinImageView.center = CGPointMake(self.mapView.frame.size.width/2, self.mapView.frame.size.height/2);
+    self.pinImageView.center = CGPointMake(self.mapView.frame.size.width/2, self.mapView.frame.size.height/2-12);
+    
     [super viewDidAppear:animated];
 }
 
@@ -78,7 +81,7 @@
     PositionInfo *positionInfo = [self.positions objectAtIndex:indexPath.row];
     CLLocationCoordinate2D center = CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng);
     MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(center, 800, 800);
-    [self.mapView setRegion:region animated:YES];
+    [self showLocation:region.center];
 }
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -104,7 +107,7 @@
 - (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray<CLLocation *> *)locations {
     for (CLLocation *location in locations) {
         if ([location.timestamp timeIntervalSinceNow] > -30.0) {
-            [self updateCurrentLocation:location];
+            [self showLocation:location.coordinate];
             [self.locationManager stopUpdatingLocation];
             return;
         }
@@ -112,8 +115,6 @@
 }
 
 -(void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
-    NSLog(@"Enter region: %@", region.identifier);
-
     TraceRecord *record = [TraceRecord new];
     record.recordAt = [NSDate date];
     record.recordType = TraceRecordTypeEnter;
@@ -123,8 +124,6 @@
 }
 
 - (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
-    NSLog(@"Exit region: %@", region.identifier);
-
     TraceRecord *record = [TraceRecord new];
     record.recordAt = [NSDate date];
     record.recordType = TraceRecordTypeExit;
@@ -145,6 +144,13 @@
 - (BOOL)textFieldShouldReturn:(UITextField *)textField {
     if (textField.text.length == 0)
         return NO;
+    [textField resignFirstResponder];
+    return YES;
+}
+
+- (void)textFieldDidEndEditing:(UITextField *)textField {
+    if (textField.text.length == 0)
+        return;
     
     NSUInteger index = textField.tag;
     PositionInfo *positionInfo = [self.positions objectAtIndex:index];
@@ -152,20 +158,11 @@
     [self.locationManager stopMonitoringForRegion:region];
     positionInfo.identifier = textField.text;
     [self syncPositions];
-
+    
     CLCircularRegion *newRegion = [[CLCircularRegion alloc] initWithCenter:region.center radius:300 identifier:positionInfo.identifier];
     [self.locationManager startMonitoringForRegion:newRegion];
-
+    
     [textField resignFirstResponder];
-    return YES;
-}
-
-- (CLCircularRegion *)regionWithId:(NSString *)identifier {
-    for (CLCircularRegion *region in self.locationManager.monitoredRegions) {
-        if ([region.identifier isEqualToString:identifier])
-            return region;
-    }
-    return nil;
 }
 
 #pragma mark - Actions
@@ -173,8 +170,9 @@
 - (IBAction)addAction:(id)sender {
     PositionInfo *positionInfo = [PositionInfo new];
     positionInfo.identifier = [NSString stringWithFormat:@"position_%ld", (long)self.positions.count];
-    positionInfo.lat = self.mapView.centerCoordinate.latitude;
-    positionInfo.lng = self.mapView.centerCoordinate.longitude;
+    CLLocationCoordinate2D gpsCoordinate = [LocationTransform gpsForGmapLoc:self.mapView.centerCoordinate];
+    positionInfo.lat = gpsCoordinate.latitude;
+    positionInfo.lng = gpsCoordinate.longitude;
 
     CLCircularRegion *region = [[CLCircularRegion alloc] initWithCenter:self.mapView.centerCoordinate radius:300 identifier:positionInfo.identifier];
     [self.locationManager startMonitoringForRegion:region];
@@ -194,9 +192,9 @@
     [self.tableView reloadData];
 }
 
-- (void)updateCurrentLocation:(CLLocation *)location {
-    self.currentLocation = location;
-    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(self.currentLocation.coordinate, 800, 800);
+- (void)showLocation:(CLLocationCoordinate2D)gpsCoordinate {
+    CLLocationCoordinate2D mapCoordiante = [LocationTransform gmapLocForGps:gpsCoordinate];
+    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(mapCoordiante, 800, 800);
     [self.mapView setRegion:region animated:YES];
 }
 
@@ -236,13 +234,25 @@
     [[NSUserDefaults standardUserDefaults] setObject:jsonStr forKey:@"StoredRecords"];
     [[NSUserDefaults standardUserDefaults] synchronize];
 
+    NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
+    [dateFormatter setDateFormat:@"yy-MM-dd HH:mm"];
+
     UILocalNotification *notification = [[UILocalNotification alloc] init];
     NSString *recordTypeStr = record.recordType == TraceRecordTypeEnter ? @"到达" : @"离开";
-    NSString *message = [NSString stringWithFormat:@"%@ %@ [%@]", recordTypeStr, record.positionName, record.recordAt];
+    NSString *message = [NSString stringWithFormat:@"%@ %@ [%@]", recordTypeStr, record.positionName, [dateFormatter stringFromDate:record.recordAt]];
     [notification setAlertBody:message];
-    [notification setFireDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+    [notification setFireDate:[NSDate dateWithTimeIntervalSinceNow:10]];
     [notification setTimeZone:[NSTimeZone  defaultTimeZone]];
     [[UIApplication sharedApplication] setScheduledLocalNotifications:[NSArray arrayWithObject:notification]];
 }
+
+- (CLCircularRegion *)regionWithId:(NSString *)identifier {
+    for (CLCircularRegion *region in self.locationManager.monitoredRegions) {
+        if ([region.identifier isEqualToString:identifier])
+            return region;
+    }
+    return nil;
+}
+
 
 @end

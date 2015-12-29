@@ -22,6 +22,7 @@
 		ABE56F1C1C32362E00113950 /* TraceRecord.m in Sources */ = {isa = PBXBuildFile; fileRef = ABE56F1B1C32362E00113950 /* TraceRecord.m */; };
 		ABE56F1F1C3240BD00113950 /* RecordCell.m in Sources */ = {isa = PBXBuildFile; fileRef = ABE56F1E1C3240BD00113950 /* RecordCell.m */; };
 		ABE56F241C32413F00113950 /* RecordController.m in Sources */ = {isa = PBXBuildFile; fileRef = ABE56F231C32413F00113950 /* RecordController.m */; };
+		ABE56F2A1C325D3D00113950 /* LocationTransform.m in Sources */ = {isa = PBXBuildFile; fileRef = ABE56F291C325D3D00113950 /* LocationTransform.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -53,6 +54,8 @@
 		ABE56F1E1C3240BD00113950 /* RecordCell.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = RecordCell.m; sourceTree = "<group>"; };
 		ABE56F221C32413F00113950 /* RecordController.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RecordController.h; path = YYModel/RecordController.h; sourceTree = "<group>"; };
 		ABE56F231C32413F00113950 /* RecordController.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = RecordController.m; path = YYModel/RecordController.m; sourceTree = "<group>"; };
+		ABE56F281C325D3D00113950 /* LocationTransform.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = LocationTransform.h; sourceTree = "<group>"; };
+		ABE56F291C325D3D00113950 /* LocationTransform.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = LocationTransform.m; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -88,6 +91,7 @@
 		AB0D08F71C31069F002460A4 /* GeoFence */ = {
 			isa = PBXGroup;
 			children = (
+				ABE56F2B1C325DE700113950 /* LocationTransform */,
 				ABE56F211C3240D000113950 /* View */,
 				ABE56F201C3240C700113950 /* Model */,
 				ABE56F0E1C3146DF00113950 /* YYModel */,
@@ -156,6 +160,15 @@
 				ABE56F1E1C3240BD00113950 /* RecordCell.m */,
 			);
 			name = View;
+			sourceTree = "<group>";
+		};
+		ABE56F2B1C325DE700113950 /* LocationTransform */ = {
+			isa = PBXGroup;
+			children = (
+				ABE56F281C325D3D00113950 /* LocationTransform.h */,
+				ABE56F291C325D3D00113950 /* LocationTransform.m */,
+			);
+			name = LocationTransform;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -237,6 +250,7 @@
 				ABE56F151C3146DF00113950 /* YYClassInfo.m in Sources */,
 				ABE56F1C1C32362E00113950 /* TraceRecord.m in Sources */,
 				ABE56F241C32413F00113950 /* RecordController.m in Sources */,
+				ABE56F2A1C325D3D00113950 /* LocationTransform.m in Sources */,
 				AB0D08FA1C31069F002460A4 /* main.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -354,6 +368,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.links.GeoFence;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Debug;
 		};
@@ -368,6 +383,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.links.GeoFence;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				TARGETED_DEVICE_FAMILY = "1,2";
 			};
 			name = Release;
 		};
