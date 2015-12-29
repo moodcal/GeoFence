@@ -8,15 +8,21 @@
 
 #import "MainViewController.h"
 #import "PositionInfo.h"
+#import "TraceRecord.h"
+#import "PositionCell.h"
+#import "RecordController.h"
 
-@interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, MKMapViewDelegate, CLLocationManagerDelegate>
+@interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, MKMapViewDelegate, CLLocationManagerDelegate, UITextFieldDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (weak, nonatomic) IBOutlet MKMapView *mapView;
 @property (strong, nonatomic) NSMutableArray *positions;
+@property (strong, nonatomic) NSMutableArray *records;
 @property (strong, nonatomic) CLLocationManager *locationManager;
 @property (strong, nonatomic) CLLocation *currentLocation;
 @property (weak, nonatomic) IBOutlet UIButton *addButton;
 @property (strong, nonatomic) UIImageView *pinImageView;
+@property (strong, nonatomic) CLGeocoder *geocoder;
+
 - (IBAction)addAction:(id)sender;
 @end
 
@@ -25,6 +31,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.title = @"位置监控";
+    self.geocoder = [[CLGeocoder alloc] init];
     self.locationManager = [[CLLocationManager alloc] init];
     self.locationManager.delegate = self;
     [self.locationManager requestWhenInUseAuthorization];
@@ -32,10 +39,15 @@
     self.pinImageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, 10, 20)];
     self.pinImageView.backgroundColor = [UIColor redColor];
     [self.mapView addSubview:self.pinImageView];
-    NSString *jsonStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"StoredPositions"];
-    self.positions = [[NSArray yy_modelArrayWithClass:[PositionInfo class] json:jsonStr] mutableCopy];
-    if (!self.positions)
-        self.positions = [NSMutableArray array];
+    
+    NSString *positionJsonStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"StoredPositions"];
+    NSString *recordJsonStr = [[NSUserDefaults standardUserDefaults] objectForKey:@"StoredRecords"];
+    self.positions = [[NSArray yy_modelArrayWithClass:[PositionInfo class] json:positionJsonStr] mutableCopy];
+    self.records = [[NSArray yy_modelArrayWithClass:[TraceRecord class] json:recordJsonStr] mutableCopy];
+    if (!self.positions) self.positions = [NSMutableArray array];
+    if (!self.records) self.records = [NSMutableArray array];
+    
+    [self geoOnebyOne];
 }
 
 - (void)viewDidAppear:(BOOL)animated {
@@ -43,19 +55,22 @@
     [super viewDidAppear:animated];
 }
 
-#pragma mark - TableView DataSource
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+    [self.view endEditing:YES];
+}
+
+#pragma mark - TableView
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
     return self.positions.count;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    UITableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"PositionCell" forIndexPath:indexPath];
+    PositionCell *cell = [tableView dequeueReusableCellWithIdentifier:@"PositionCell" forIndexPath:indexPath];
     PositionInfo *positionInfo = [self.positions objectAtIndex:indexPath.row];
-    UILabel *nameLabel = (UILabel *)[cell viewWithTag:1];
-    UILabel *addressLabel = (UILabel *)[cell viewWithTag:3];
-    nameLabel.text = positionInfo.identifier;
-    addressLabel.text = [NSString stringWithFormat:@"%.3f, %.3f", positionInfo.lat, positionInfo.lng];
+    cell.nameTextField.text = positionInfo.identifier;
+    cell.nameTextField.tag = indexPath.row;
+    cell.addressLabel.text = positionInfo.address ? positionInfo.address : [NSString stringWithFormat:@"%.3f, %.3f", positionInfo.lat, positionInfo.lng];
     return cell;
 }
 
@@ -66,10 +81,23 @@
     [self.mapView setRegion:region animated:YES];
 }
 
-- (void)updateCurrentLocation:(CLLocation *)location {
-    self.currentLocation = location;
-    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(self.currentLocation.coordinate, 800, 800);
-    [self.mapView setRegion:region animated:YES];
+- (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
+    if (editingStyle == UITableViewCellEditingStyleDelete) {
+        PositionInfo *positionInfo = [self.positions objectAtIndex:indexPath.row];
+        CLCircularRegion *region = [self regionWithId:positionInfo.identifier];
+        [self.locationManager stopMonitoringForRegion:region];
+        [self.positions removeObject:positionInfo];
+        [self syncPositions];
+    }
+}
+
+#pragma mark - Segue
+-(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+    if ([segue.identifier isEqualToString:@"PushRecordSegue"]) {
+        RecordController *recordController = (RecordController *)segue.destinationViewController;
+        recordController.records = self.records.reverseObjectEnumerator.allObjects;
+        recordController.title = @"记录列表";
+    }
 }
 
 #pragma mark - LocationManager Delegate
@@ -77,6 +105,7 @@
     for (CLLocation *location in locations) {
         if ([location.timestamp timeIntervalSinceNow] > -30.0) {
             [self updateCurrentLocation:location];
+            [self.locationManager stopUpdatingLocation];
             return;
         }
     }
@@ -84,10 +113,24 @@
 
 -(void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
     NSLog(@"Enter region: %@", region.identifier);
+
+    TraceRecord *record = [TraceRecord new];
+    record.recordAt = [NSDate date];
+    record.recordType = TraceRecordTypeEnter;
+    record.positionName = region.identifier;
+    
+    [self addLocalNotificationForRecord:record];
 }
 
 - (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
     NSLog(@"Exit region: %@", region.identifier);
+
+    TraceRecord *record = [TraceRecord new];
+    record.recordAt = [NSDate date];
+    record.recordType = TraceRecordTypeExit;
+    record.positionName = region.identifier;
+    
+    [self addLocalNotificationForRecord:record];
 }
 
 - (void)locationManager:(CLLocationManager *)manager monitoringDidFailForRegion:(CLRegion *)region withError:(NSError *)error {
@@ -98,18 +141,50 @@
     NSLog(@"location failed: %@", error);
 }
 
+#pragma mark - TextField Delegate
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    if (textField.text.length == 0)
+        return NO;
+    
+    NSUInteger index = textField.tag;
+    PositionInfo *positionInfo = [self.positions objectAtIndex:index];
+    CLCircularRegion *region = [self regionWithId:positionInfo.identifier];
+    [self.locationManager stopMonitoringForRegion:region];
+    positionInfo.identifier = textField.text;
+    [self syncPositions];
+
+    CLCircularRegion *newRegion = [[CLCircularRegion alloc] initWithCenter:region.center radius:300 identifier:positionInfo.identifier];
+    [self.locationManager startMonitoringForRegion:newRegion];
+
+    [textField resignFirstResponder];
+    return YES;
+}
+
+- (CLCircularRegion *)regionWithId:(NSString *)identifier {
+    for (CLCircularRegion *region in self.locationManager.monitoredRegions) {
+        if ([region.identifier isEqualToString:identifier])
+            return region;
+    }
+    return nil;
+}
+
 #pragma mark - Actions
 
 - (IBAction)addAction:(id)sender {
-    CLCircularRegion *region = [[CLCircularRegion alloc] initWithCenter:self.mapView.centerCoordinate radius:300 identifier:@"Home"];
-    [self.locationManager startMonitoringForRegion:region];
     PositionInfo *positionInfo = [PositionInfo new];
     positionInfo.identifier = [NSString stringWithFormat:@"position_%ld", (long)self.positions.count];
     positionInfo.lat = self.mapView.centerCoordinate.latitude;
     positionInfo.lng = self.mapView.centerCoordinate.longitude;
+
+    CLCircularRegion *region = [[CLCircularRegion alloc] initWithCenter:self.mapView.centerCoordinate radius:300 identifier:positionInfo.identifier];
+    [self.locationManager startMonitoringForRegion:region];
     [self.positions addObject:positionInfo];
     [self syncPositions];
+    
+    [self asyncGeoForPosition:positionInfo];
 }
+
+#pragma mark - Helpers
 
 - (void)syncPositions {
     NSString *jsonStr = [self.positions yy_modelToJSONString];
@@ -117,6 +192,57 @@
     [[NSUserDefaults standardUserDefaults] synchronize];
     
     [self.tableView reloadData];
+}
+
+- (void)updateCurrentLocation:(CLLocation *)location {
+    self.currentLocation = location;
+    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(self.currentLocation.coordinate, 800, 800);
+    [self.mapView setRegion:region animated:YES];
+}
+
+- (void)asyncGeoForPosition:(PositionInfo *)positionInfo {
+    CLLocation *location = [[CLLocation alloc] initWithLatitude:positionInfo.lat longitude:positionInfo.lng];
+    [self.geocoder reverseGeocodeLocation:location  completionHandler:^(NSArray *placemarks, NSError *error) {
+        if (error == nil && [placemarks count] > 0) {
+            CLPlacemark *placemark = [placemarks lastObject];
+            positionInfo.address = [NSString stringWithFormat:@"%@ %@", placemark.administrativeArea, placemark.locality];
+            if (placemark.subLocality)
+                positionInfo.address = [positionInfo.address stringByAppendingFormat:@" %@", placemark.subLocality];
+            if (placemark.thoroughfare)
+                positionInfo.address = [positionInfo.address stringByAppendingFormat:@" %@", placemark.thoroughfare];
+            if (placemark.subThoroughfare)
+                positionInfo.address = [positionInfo.address stringByAppendingFormat:@" %@", placemark.subThoroughfare];
+            [self.tableView reloadData];
+        } else {
+            NSLog(@"%@", error.debugDescription);
+        }
+        [self geoOnebyOne];
+    } ];
+}
+
+- (void)geoOnebyOne {
+    [self.positions enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        PositionInfo *positionInfo = (PositionInfo *)obj;
+        if (!positionInfo.address) {
+            [self asyncGeoForPosition:positionInfo];
+            *stop = YES;
+        }
+    }];
+}
+
+- (void)addLocalNotificationForRecord:(TraceRecord *)record {
+    [self.records addObject:record];
+    NSString *jsonStr = [self.records yy_modelToJSONString];
+    [[NSUserDefaults standardUserDefaults] setObject:jsonStr forKey:@"StoredRecords"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+
+    UILocalNotification *notification = [[UILocalNotification alloc] init];
+    NSString *recordTypeStr = record.recordType == TraceRecordTypeEnter ? @"到达" : @"离开";
+    NSString *message = [NSString stringWithFormat:@"%@ %@ [%@]", recordTypeStr, record.positionName, record.recordAt];
+    [notification setAlertBody:message];
+    [notification setFireDate:[NSDate dateWithTimeIntervalSinceNow:1]];
+    [notification setTimeZone:[NSTimeZone  defaultTimeZone]];
+    [[UIApplication sharedApplication] setScheduledLocalNotifications:[NSArray arrayWithObject:notification]];
 }
 
 @end
