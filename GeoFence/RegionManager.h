@@ -29,6 +29,7 @@
 - (void)addMonitorForPosition:(PositionInfo *)positionInfo;
 - (void)addPositionInfo:(PositionInfo *)positionInfo;
 - (void)syncPositions;
+- (void)syncRecords;
 - (void)geoOnebyOne;
 - (BOOL)isValidPosition:(PositionInfo *)positionInfo;
 - (CLCircularRegion *)regionWithId:(NSString *)identifier;

@@ -195,7 +195,13 @@
                             <outlet property="delegate" destination="aZN-x7-ZR3" id="Gvp-Il-6Nq"/>
                         </connections>
                     </tableView>
-                    <navigationItem key="navigationItem" id="MYv-WQ-l7p"/>
+                    <navigationItem key="navigationItem" id="MYv-WQ-l7p">
+                        <barButtonItem key="rightBarButtonItem" style="plain" systemItem="trash" id="HaC-ZO-OuI">
+                            <connections>
+                                <action selector="removeAllRecords:" destination="aZN-x7-ZR3" id="LEm-D0-cYg"/>
+                            </connections>
+                        </barButtonItem>
+                    </navigationItem>
                 </tableViewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="jID-Dv-Xa8" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>

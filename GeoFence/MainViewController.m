@@ -96,7 +96,6 @@
 -(void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if ([segue.identifier isEqualToString:@"PushRecordSegue"]) {
         RecordController *recordController = (RecordController *)segue.destinationViewController;
-        recordController.records = self.regionManager.records.reverseObjectEnumerator.allObjects;
         recordController.title = NSLocalizedString(@"Records", nil);
     }
 }

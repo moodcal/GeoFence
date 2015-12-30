@@ -106,9 +106,7 @@
 
 - (void)addLocalNotificationForRecord:(TraceRecord *)record {
     [self.records addObject:record];
-    NSString *jsonStr = [self.records yy_modelToJSONString];
-    [[NSUserDefaults standardUserDefaults] setObject:jsonStr forKey:@"StoredRecords"];
-    [[NSUserDefaults standardUserDefaults] synchronize];
+    [self syncRecords];
     
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yy-MM-dd HH:mm"];
@@ -119,6 +117,7 @@
     notification.alertBody = message;
     notification.soundName = UILocalNotificationDefaultSoundName;
     [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+    NSLog(@"%@", message);
 }
 
 - (CLCircularRegion *)regionWithId:(NSString *)identifier {
@@ -151,13 +150,19 @@
     CLCircularRegion *region = [self regionWithId:positionInfo.identifier];
     if (region) [self.locationManager stopMonitoringForRegion:region];
     
-    region = [[CLCircularRegion alloc] initWithCenter:CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng) radius:1000 identifier:positionInfo.identifier];
+    region = [[CLCircularRegion alloc] initWithCenter:CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng) radius:100 identifier:positionInfo.identifier];
     [[RegionManager sharedInstance].locationManager startMonitoringForRegion:region];
 }
 
 - (void)syncPositions {
     NSString *jsonStr = [self.positions yy_modelToJSONString];
     [[NSUserDefaults standardUserDefaults] setObject:jsonStr forKey:@"StoredPositions"];
+    [[NSUserDefaults standardUserDefaults] synchronize];
+}
+
+- (void)syncRecords {
+    NSString *jsonStr = [self.records yy_modelToJSONString];
+    [[NSUserDefaults standardUserDefaults] setObject:jsonStr forKey:@"StoredRecords"];
     [[NSUserDefaults standardUserDefaults] synchronize];
 }
 

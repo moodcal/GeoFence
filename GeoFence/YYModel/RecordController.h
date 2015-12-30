@@ -9,5 +9,4 @@
 #import <UIKit/UIKit.h>
 
 @interface RecordController : UITableViewController
-@property (nonatomic, strong) NSArray *records;
 @end
