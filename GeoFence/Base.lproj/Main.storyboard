@@ -52,7 +52,7 @@
                                 </constraints>
                                 <state key="normal" title="Add"/>
                                 <connections>
-                                    <action selector="addAction:" destination="78T-aK-4hJ" eventType="touchUpInside" id="cZD-0Q-0xW"/>
+                                    <action selector="addMonitorAction:" destination="78T-aK-4hJ" eventType="touchUpInside" id="h9c-e6-DV4"/>
                                 </connections>
                             </button>
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" allowsSelectionDuringEditing="YES" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="LJr-QW-gRQ">

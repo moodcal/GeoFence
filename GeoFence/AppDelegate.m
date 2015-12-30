@@ -7,6 +7,7 @@
 //
 
 #import "AppDelegate.h"
+#import "RegionManager.h"
 
 @interface AppDelegate ()
 
@@ -20,6 +21,14 @@
     
     [application registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound categories:nil]];
 
+    if ([launchOptions objectForKey:UIApplicationLaunchOptionsLocationKey]) {
+        [[RegionManager sharedInstance] monitorAllPositions];
+        
+        UILocalNotification *notification = [[UILocalNotification alloc] init];
+        notification.alertBody = @"Region crossed";
+        notification.soundName = UILocalNotificationDefaultSoundName;
+        [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+    }
     return YES;
 }
 
