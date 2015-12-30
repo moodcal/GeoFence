@@ -21,11 +21,10 @@
     
     [application registerUserNotificationSettings:[UIUserNotificationSettings settingsForTypes:UIUserNotificationTypeAlert|UIUserNotificationTypeBadge|UIUserNotificationTypeSound categories:nil]];
 
+    [[RegionManager sharedInstance] monitorAllPositions];
     if ([launchOptions objectForKey:UIApplicationLaunchOptionsLocationKey]) {
-        [[RegionManager sharedInstance] monitorAllPositions];
-        
         UILocalNotification *notification = [[UILocalNotification alloc] init];
-        notification.alertBody = @"Region crossed";
+        notification.alertBody = @"APP Launch ...";
         notification.soundName = UILocalNotificationDefaultSoundName;
         [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
     }

@@ -189,6 +189,10 @@
 }
 
 - (void)monitorAllPositions {
+    for (CLCircularRegion *region in self.locationManager.monitoredRegions) {
+        [self.locationManager stopMonitoringForRegion:region];
+    }
+    
     for (PositionInfo *positionInfo in self.positions) {
         [self addMonitorForPosition:positionInfo];
     }
