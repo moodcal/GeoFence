@@ -12,6 +12,8 @@
 #import "LocationTransform.h"
 #import "RegionManager.h"
 
+#define MapScaleDistance 2000
+
 @interface MainViewController ()<UITableViewDataSource, UITableViewDelegate, MKMapViewDelegate, UITextFieldDelegate, RegionManagerDelegate>
 @property (weak, nonatomic) IBOutlet UITableView *tableView;
 @property (weak, nonatomic) IBOutlet MKMapView *mapView;
@@ -20,6 +22,8 @@
 @property (strong, nonatomic) UIImageView *pinImageView;
 @property (strong, nonatomic) RegionManager *regionManager;
 - (IBAction)addMonitorAction:(id)sender;
+- (IBAction)cellLongPressAction:(id)sender;
+- (IBAction)showCurrentLocation:(id)sender;
 @end
 
 @implementation MainViewController
@@ -62,14 +66,13 @@
     cell.nameTextField.text = positionInfo.identifier;
     cell.nameTextField.tag = indexPath.row;
     cell.addressLabel.text = positionInfo.address ? positionInfo.address : [NSString stringWithFormat:@"%.3f, %.3f", positionInfo.lat, positionInfo.lng];
+    cell.addressLabel.text = [cell.addressLabel.text stringByAppendingFormat:@" [%ldm]", positionInfo.radius];
     return cell;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     PositionInfo *positionInfo = [[self.regionManager positions] objectAtIndex:indexPath.row];
-    CLLocationCoordinate2D center = CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng);
-    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(center, 800, 800);
-    [self showMapWithGPS:region.center];
+    [self showPositionInMap:positionInfo];
 }
 
 - (void)tableView:(UITableView *)tableView commitEditingStyle:(UITableViewCellEditingStyle)editingStyle forRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -83,13 +86,29 @@
     }
 }
 
+#pragma mark - MapView delegate
+
+- (MKOverlayRenderer *) mapView:(MKMapView *)mapView rendererForOverlay:(id)overlay {
+    if([overlay isKindOfClass:[MKCircle class]]) {
+        MKCircleRenderer* aRenderer = [[MKCircleRenderer alloc] initWithCircle:(MKCircle *)overlay];
+        aRenderer.fillColor = [[UIColor blueColor] colorWithAlphaComponent:0.4];
+        aRenderer.strokeColor = [[UIColor grayColor] colorWithAlphaComponent:0.9];
+        aRenderer.lineWidth = 2;
+        aRenderer.lineDashPattern = @[@2, @5];
+        aRenderer.alpha = 0.5;
+        return aRenderer;
+    } else {
+        return nil;
+    }
+}
+
 #pragma mark - RegionManager Delegate
 - (void)positionGeoUpdated:(PositionInfo *)positionInfo {
     [self.tableView reloadData];
 }
 
 - (void)locationDidUpdated:(CLLocationCoordinate2D)coordinate {
-    [self showMapWithGPS:coordinate];
+    [self showCurrentLocation:nil];
 }
 
 #pragma mark - Segue
@@ -133,17 +152,58 @@
     CLLocationCoordinate2D gpsCoordinate = [LocationTransform gpsForGmapLoc:self.mapView.centerCoordinate];
     positionInfo.lat = gpsCoordinate.latitude;
     positionInfo.lng = gpsCoordinate.longitude;
+    positionInfo.radius = 100;
     
     [self.regionManager addPositionInfo:positionInfo];
     [self.tableView reloadData];
 }
 
+- (IBAction)cellLongPressAction:(UILongPressGestureRecognizer *)sender {
+    CGPoint touchPoint = [sender locationInView:self.view];
+    NSIndexPath* indexPath = [self.tableView indexPathForRowAtPoint:touchPoint];
+    PositionInfo *positionInfo = [self.regionManager.positions objectAtIndex:indexPath.row];
+    
+    UIAlertController* alertController = [UIAlertController alertControllerWithTitle:@"Monitor radius" message:nil preferredStyle:UIAlertControllerStyleAlert];
+    [alertController addTextFieldWithConfigurationHandler:^(UITextField *textField) {
+        textField.text = [NSString stringWithFormat:@"%ld", positionInfo.radius];
+    }];
+
+    UIAlertAction* okAction = [UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:^(UIAlertAction * action) {
+        UITextField *textField = alertController.textFields.firstObject;
+        positionInfo.radius = textField.text.integerValue;
+        [self.regionManager addMonitorForPosition:positionInfo];
+        [[RegionManager sharedInstance] syncPositions];
+        [self showPositionInMap:positionInfo];
+        [self.tableView selectRowAtIndexPath:indexPath animated:YES scrollPosition:UITableViewScrollPositionNone];
+        [self.tableView reloadData];
+    }];
+    
+    [alertController addAction:okAction];
+    [self presentViewController:alertController animated:YES completion:nil];
+}
+
+- (void)showPositionInMap:(PositionInfo *)positionInfo {
+    CLLocationCoordinate2D center = CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng);
+    CLLocationCoordinate2D mapcoordinate = [LocationTransform gmapLocForGps:center];
+    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(mapcoordinate, MapScaleDistance, MapScaleDistance);
+    [self showRegion:region radius:positionInfo.radius];
+}
+
+- (IBAction)showCurrentLocation:(id)sender {
+    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(self.mapView.userLocation.location.coordinate, MapScaleDistance, MapScaleDistance);
+    [self.mapView setRegion:region animated:YES];
+}
+
+- (void)alertTextFieldDidChanged:(id)sender {
+}
+
 #pragma mark - Helpers
 
-- (void)showMapWithGPS:(CLLocationCoordinate2D)gpsCoordinate {
-    CLLocationCoordinate2D mapcoordinate = [LocationTransform gmapLocForGps:gpsCoordinate];
-    MKCoordinateRegion region = MKCoordinateRegionMakeWithDistance(mapcoordinate, 800, 800);
+- (void)showRegion:(MKCoordinateRegion)region radius:(CLLocationDistance)radius {
     [self.mapView setRegion:region animated:YES];
+    [self.mapView removeOverlays:self.mapView.overlays];
+    MKCircle *circle = [MKCircle circleWithCenterCoordinate:region.center radius:radius];
+    [self.mapView addOverlay:circle];
 }
 
 @end

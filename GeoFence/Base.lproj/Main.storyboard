@@ -45,7 +45,7 @@
                                 </connections>
                             </mapView>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="alP-fd-Y6q">
-                                <rect key="frame" x="262" y="454" width="50" height="40"/>
+                                <rect key="frame" x="262" y="192" width="50" height="40"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="40" id="MUp-u0-G0m"/>
                                     <constraint firstAttribute="width" constant="50" id="yUc-ZP-lPu"/>
@@ -58,6 +58,7 @@
                             <tableView clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" dataMode="prototypes" style="plain" separatorStyle="default" allowsSelectionDuringEditing="YES" rowHeight="44" sectionHeaderHeight="28" sectionFooterHeight="28" translatesAutoresizingMaskIntoConstraints="NO" id="LJr-QW-gRQ">
                                 <rect key="frame" x="0.0" y="0.0" width="320" height="184"/>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
+                                <gestureRecognizers/>
                                 <prototypes>
                                     <tableViewCell clipsSubviews="YES" tag="2" contentMode="scaleToFill" selectionStyle="blue" hidesAccessoryWhenEditing="NO" indentationLevel="1" indentationWidth="0.0" reuseIdentifier="PositionCell" id="HsU-6r-5qX" customClass="PositionCell">
                                         <rect key="frame" x="0.0" y="28" width="320" height="44"/>
@@ -92,15 +93,18 @@
                                                 <constraint firstItem="vl8-yb-KtU" firstAttribute="leading" secondItem="V2Q-uQ-DyF" secondAttribute="trailing" constant="16" id="pTM-XR-Ifi"/>
                                             </constraints>
                                         </tableViewCellContentView>
+                                        <gestureRecognizers/>
                                         <connections>
                                             <outlet property="addressLabel" destination="vl8-yb-KtU" id="Q6T-Zv-5Mp"/>
                                             <outlet property="nameTextField" destination="V2Q-uQ-DyF" id="HVi-nS-rBK"/>
+                                            <outletCollection property="gestureRecognizers" destination="cpy-jb-ocA" appends="YES" id="Mlg-S3-paz"/>
                                         </connections>
                                     </tableViewCell>
                                 </prototypes>
                                 <connections>
                                     <outlet property="dataSource" destination="78T-aK-4hJ" id="12j-Lc-93a"/>
                                     <outlet property="delegate" destination="78T-aK-4hJ" id="dwY-PA-Js6"/>
+                                    <outletCollection property="gestureRecognizers" destination="cpy-jb-ocA" appends="YES" id="YCj-pc-Fnu"/>
                                 </connections>
                             </tableView>
                         </subviews>
@@ -109,7 +113,7 @@
                             <constraint firstItem="LJr-QW-gRQ" firstAttribute="leading" secondItem="4Ma-qI-8KE" secondAttribute="leading" id="1Bj-CQ-YVD"/>
                             <constraint firstItem="gv3-AR-YWv" firstAttribute="leading" secondItem="4Ma-qI-8KE" secondAttribute="leading" id="2XY-lG-T7C"/>
                             <constraint firstItem="gv3-AR-YWv" firstAttribute="bottom" secondItem="pYO-3w-d20" secondAttribute="top" id="KFI-9O-lYc"/>
-                            <constraint firstItem="pYO-3w-d20" firstAttribute="top" secondItem="alP-fd-Y6q" secondAttribute="bottom" constant="10" id="UBA-V6-eEn"/>
+                            <constraint firstItem="alP-fd-Y6q" firstAttribute="top" secondItem="LJr-QW-gRQ" secondAttribute="bottom" constant="8" id="QdM-5u-1Rc"/>
                             <constraint firstAttribute="trailing" secondItem="gv3-AR-YWv" secondAttribute="trailing" id="Zx8-yX-sDq"/>
                             <constraint firstItem="LJr-QW-gRQ" firstAttribute="top" secondItem="4Ma-qI-8KE" secondAttribute="top" id="agZ-pC-VAG"/>
                             <constraint firstAttribute="trailing" secondItem="LJr-QW-gRQ" secondAttribute="trailing" id="cV1-qV-Fv8"/>
@@ -118,6 +122,11 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" id="Fei-Pn-XmX">
+                        <barButtonItem key="leftBarButtonItem" image="CurrentLocation" id="1YQ-bx-mgB">
+                            <connections>
+                                <action selector="showCurrentLocation:" destination="78T-aK-4hJ" id="JYz-0O-e9G"/>
+                            </connections>
+                        </barButtonItem>
                         <barButtonItem key="rightBarButtonItem" title="records" style="plain" id="1Mm-ZW-UNX">
                             <connections>
                                 <segue destination="aZN-x7-ZR3" kind="push" identifier="PushRecordSegue" id="tC6-qc-jSY"/>
@@ -132,6 +141,11 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="0V5-3h-b7A" userLabel="First Responder" sceneMemberID="firstResponder"/>
+                <pongPressGestureRecognizer allowableMovement="10" minimumPressDuration="0.5" id="cpy-jb-ocA">
+                    <connections>
+                        <action selector="cellLongPressAction:" destination="78T-aK-4hJ" id="KSK-5L-CTQ"/>
+                    </connections>
+                </pongPressGestureRecognizer>
             </objects>
             <point key="canvasLocation" x="168" y="344"/>
         </scene>
@@ -208,4 +222,7 @@
             <point key="canvasLocation" x="527" y="331"/>
         </scene>
     </scenes>
+    <resources>
+        <image name="CurrentLocation" width="15" height="15"/>
+    </resources>
 </document>

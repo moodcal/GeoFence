@@ -48,7 +48,7 @@
 #pragma mark - LocationManager Delegate
 - (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray<CLLocation *> *)locations {
     for (CLLocation *location in locations) {
-        if ([location.timestamp timeIntervalSinceNow] > -30.0) {
+        if ([location.timestamp timeIntervalSinceNow] > -10.0) {
             if ([self.delegate respondsToSelector:@selector(locationDidUpdated:)])
                 [self.delegate locationDidUpdated:location.coordinate];
             [self.locationManager stopUpdatingLocation];
@@ -150,7 +150,7 @@
     CLCircularRegion *region = [self regionWithId:positionInfo.identifier];
     if (region) [self.locationManager stopMonitoringForRegion:region];
     
-    region = [[CLCircularRegion alloc] initWithCenter:CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng) radius:100 identifier:positionInfo.identifier];
+    region = [[CLCircularRegion alloc] initWithCenter:CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng) radius:positionInfo.radius identifier:positionInfo.identifier];
     [[RegionManager sharedInstance].locationManager startMonitoringForRegion:region];
 }
 
@@ -171,7 +171,7 @@
     [self.geocoder reverseGeocodeLocation:location  completionHandler:^(NSArray *placemarks, NSError *error) {
         if (error == nil && [placemarks count] > 0) {
             CLPlacemark *placemark = [placemarks lastObject];
-            positionInfo.address = [NSString stringWithFormat:@"%@ %@", placemark.administrativeArea, placemark.locality];
+            positionInfo.address = [NSString stringWithFormat:@"%@", placemark.locality];
             if (placemark.subLocality)
                 positionInfo.address = [positionInfo.address stringByAppendingFormat:@" %@", placemark.subLocality];
             if (placemark.thoroughfare)

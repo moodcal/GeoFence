@@ -15,15 +15,23 @@
 @implementation LocationTransform
 
 + (CLLocationCoordinate2D)gmapLocForGps:(CLLocationCoordinate2D)gpsCoordinate {
+#if TARGET_OS_SIMULATOR
+    return gpsCoordinate;
+#else
     double gcjLat, gcjLng;
     wgs2gcj(gpsCoordinate.latitude, gpsCoordinate.longitude, &gcjLat, &gcjLng);
     return CLLocationCoordinate2DMake(gcjLat, gcjLng);
+#endif
 }
 
 + (CLLocationCoordinate2D)gpsForGmapLoc:(CLLocationCoordinate2D)gmapCoordinate {
+#if TARGET_OS_SIMULATOR
+    return gmapCoordinate;
+#else
     double wgsLat, wgsLng;
     gcj2wgs(gmapCoordinate.latitude, gmapCoordinate.longitude, &wgsLat, &wgsLng);
     return CLLocationCoordinate2DMake(wgsLat, wgsLng);
+#endif
 }
 
 int outOfChina(double lat, double lng) {
