@@ -158,8 +158,12 @@
     [self.tableView reloadData];
 }
 
-- (IBAction)cellLongPressAction:(UILongPressGestureRecognizer *)sender {
-    CGPoint touchPoint = [sender locationInView:self.view];
+- (IBAction)cellLongPressAction:(UILongPressGestureRecognizer *)gestureRecognizer {
+    if (gestureRecognizer.state != UIGestureRecognizerStateEnded) {
+        return;
+    }
+    
+    CGPoint touchPoint = [gestureRecognizer locationInView:self.tableView];
     NSIndexPath* indexPath = [self.tableView indexPathForRowAtPoint:touchPoint];
     PositionInfo *positionInfo = [self.regionManager.positions objectAtIndex:indexPath.row];
     
