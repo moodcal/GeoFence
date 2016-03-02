@@ -51,13 +51,32 @@
         if ([location.timestamp timeIntervalSinceNow] > -10.0) {
             if ([self.delegate respondsToSelector:@selector(locationDidUpdated:)])
                 [self.delegate locationDidUpdated:location.coordinate];
+            [self monitorLocation:location];
             [self.locationManager stopUpdatingLocation];
             return;
         }
     }
 }
 
+- (void)monitorLocation:(CLLocation *)location {
+    UILocalNotification *notification = [[UILocalNotification alloc] init];
+    notification.alertBody = @"Monitor user location ...";
+    notification.soundName = UILocalNotificationDefaultSoundName;
+    [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+
+    PositionInfo *positionInfo = [PositionInfo new];
+    positionInfo.identifier = @"UserLocation";
+    positionInfo.lat = location.coordinate.latitude;
+    positionInfo.lng = location.coordinate.longitude;
+    positionInfo.radius = 100;
+    
+    [self addMonitorForPosition:positionInfo];
+    [[RegionManager sharedInstance] asyncGeoForPosition:positionInfo];
+}
+
 -(void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region {
+    [self.locationManager startUpdatingLocation];
+
     TraceRecord *record = [TraceRecord new];
     record.recordAt = [NSDate date];
     record.recordType = TraceRecordTypeEnter;
@@ -67,11 +86,13 @@
 }
 
 - (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region {
+    [self.locationManager startUpdatingLocation];
+
     TraceRecord *record = [TraceRecord new];
     record.recordAt = [NSDate date];
     record.recordType = TraceRecordTypeExit;
     record.positionName = region.identifier;
-    
+
     [self addLocalNotificationForRecord:record];
 }
 
@@ -148,7 +169,8 @@
 
 - (void)addMonitorForPosition:(PositionInfo *)positionInfo {
     CLCircularRegion *region = [self regionWithId:positionInfo.identifier];
-    if (region) [self.locationManager stopMonitoringForRegion:region];
+    if (region)
+        [self.locationManager stopMonitoringForRegion:region];
     
     region = [[CLCircularRegion alloc] initWithCenter:CLLocationCoordinate2DMake(positionInfo.lat, positionInfo.lng) radius:positionInfo.radius identifier:positionInfo.identifier];
     [[RegionManager sharedInstance].locationManager startMonitoringForRegion:region];

@@ -30,7 +30,7 @@
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
     RecordCell *cell = [tableView dequeueReusableCellWithIdentifier:@"RecordCell" forIndexPath:indexPath];
-    TraceRecord *record = [[[RegionManager sharedInstance] records] objectAtIndex:indexPath.row];
+    TraceRecord *record = [[[[[RegionManager sharedInstance] records] reverseObjectEnumerator] allObjects] objectAtIndex:indexPath.row];
     
     NSDateFormatter *dateFormatter = [[NSDateFormatter alloc] init];
     [dateFormatter setDateFormat:@"yy-MM-dd HH:mm"];
